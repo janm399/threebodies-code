@@ -143,9 +143,6 @@ void led_strip_task(void*) {
 }
 
 extern "C" void app_main(void) {
-  // gpio_pad_select_gpio(CLK_GPIO);
-  // gpio_set_direction(CLK_GPIO, GPIO_MODE_OUTPUT);
-
   gpio_pad_select_gpio(BUTTON_GPIO);
   gpio_set_direction(BUTTON_GPIO, GPIO_MODE_INPUT);
   gpio_set_pull_mode(BUTTON_GPIO, GPIO_PULLUP_ONLY);
