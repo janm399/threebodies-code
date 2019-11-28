@@ -1,4 +1,5 @@
 .pio
 *.s#?
 .DS_Store
+.vscode
 
