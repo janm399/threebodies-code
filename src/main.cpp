@@ -6,7 +6,6 @@
 #include <math.h>
 #include "pins.h"
 #include "sdkconfig.h"
-#include "ws2812.h"
 #include "ws2812rmt.h"
 
 #define delay_a() \
@@ -66,11 +65,10 @@ void IRAM_ATTR button_isr_handler(void* arg) {
   }
 }
 
-void ws2812_naive_set(const int pixel_count, const rgb_t* pixels) {
+void ws2812_naive_set(const std::vector<rgb_t> pixels) {
   gpio_set_level(LED_STRIP_GPIO, 0);
   ets_delay_us(52);
-  for (int i = 0; i < pixel_count; i++) {
-    const auto pixel = pixels[i];
+  for (const auto& pixel : pixels) {
     bool x[24] = {0};
     for (uint8_t j = 0; j < 8; j++) x[7 - j] = ((pixel.g >> j) & 1) == 0;
     for (uint8_t j = 0; j < 8; j++) x[15 - j] = ((pixel.r >> j) & 1) == 0;
@@ -136,7 +134,7 @@ void led_strip_task(void*) {
     for (int i = 0; i < pixel_count; i++) pixels[i] = color;
 
     if (naive) {
-      ws2812_naive_set(pixel_count, pixels.data());
+      ws2812_naive_set(pixels);
       vTaskDelay(pdMS_TO_TICKS(50));
     } else {
       // ws2812_set(pixel_count, pixels);
@@ -161,7 +159,6 @@ extern "C" void app_main(void) {
   gpio_isr_handler_add(BUTTON_GPIO, button_isr_handler, nullptr);
 
   xTaskCreate(led_strip_task, "led strip", 8192, nullptr, 10, nullptr);
-  // xTaskCreate(rmt_task, "rmt task", 1024, nullptr, 10, nullptr);
   // xTaskCreate(compute_stuff, "compute stuff 1", 2048, nullptr, 10, nullptr);
   // xTaskCreate(compute_stuff, "compute stuff 2", 2048, nullptr, 10, nullptr);
   // xTaskCreate(compute_stuff, "compute stuff 2", 2048, nullptr, 10, nullptr);
