@@ -5,8 +5,8 @@
 #include "freertos/task.h"
 #include "pins.h"
 
-static constexpr const uint32_t ds = 4;                          // 125ns
-static constexpr const uint32_t dl = 20;                         // 1000ns
+static constexpr const uint32_t ds = 10;                         // 125ns
+static constexpr const uint32_t dl = 80;                         // 1000ns
 static constexpr const uint32_t rs = dl * 50;                    // 50us
 static constexpr const rmt_item32_t reset = {{{rs, 0, rs, 0}}};  // reset
 static constexpr const rmt_item32_t bit0 = {{{ds, 1, dl, 0}}};   // 0
@@ -35,7 +35,7 @@ ws2812_rmt::ws2812_rmt(const gpio_num_t gpio, const rmt_channel_t channel,
   config.tx_config.carrier_en = false;
   config.tx_config.idle_output_en = true;
   config.tx_config.idle_level = RMT_IDLE_LEVEL_LOW;
-  config.clk_div = 4;
+  config.clk_div = 1;
 
   ESP_ERROR_CHECK(rmt_config(&config));
   ESP_ERROR_CHECK(rmt_driver_install(config.channel, 0, 0));
