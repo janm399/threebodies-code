@@ -7,6 +7,7 @@
 #include "pins.h"
 #include "sdkconfig.h"
 #include "ws2812.h"
+#include "ws2812rmt.h"
 
 #define delay_a() \
   { __asm__ __volatile__("nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;"); };
@@ -98,10 +99,10 @@ void led_strip_task(void*) {
     gpio_pad_select_gpio(LED_STRIP_GPIO);
     gpio_set_direction(LED_STRIP_GPIO, GPIO_MODE_OUTPUT);
   } else {
-    ws2812_init(LED_STRIP_GPIO);
+    ws2812_rmt_init(LED_STRIP_GPIO);
   }
   const auto pixel_count = 8;
-  auto pixels = new rgb_t[pixel_count];
+  auto pixels = std::vector<rgb_t>(pixel_count);
   auto color = makeRGBVal(200, 0, 0);
   uint8_t step = 0;
 
@@ -135,10 +136,13 @@ void led_strip_task(void*) {
     for (int i = 0; i < pixel_count; i++) pixels[i] = color;
 
     if (naive) {
-      ws2812_naive_set(pixel_count, pixels);
+      ws2812_naive_set(pixel_count, pixels.data());
       vTaskDelay(pdMS_TO_TICKS(50));
-    } else
-      ws2812_set(pixel_count, pixels);
+    } else {
+      // ws2812_set(pixel_count, pixels);
+      ws2812_rmt_set(pixels);
+      vTaskDelay(pdMS_TO_TICKS(50));
+    }
   }
 }
 
@@ -156,8 +160,9 @@ extern "C" void app_main(void) {
   gpio_install_isr_service(ESP_INTR_FLAG_LEVEL1);
   gpio_isr_handler_add(BUTTON_GPIO, button_isr_handler, nullptr);
 
-  xTaskCreate(led_strip_task, "led strip", 1024, nullptr, 10, nullptr);
-  xTaskCreate(compute_stuff, "compute stuff 1", 2048, nullptr, 10, nullptr);
-  xTaskCreate(compute_stuff, "compute stuff 2", 2048, nullptr, 10, nullptr);
-  xTaskCreate(compute_stuff, "compute stuff 2", 2048, nullptr, 10, nullptr);
+  xTaskCreate(led_strip_task, "led strip", 8192, nullptr, 10, nullptr);
+  // xTaskCreate(rmt_task, "rmt task", 1024, nullptr, 10, nullptr);
+  // xTaskCreate(compute_stuff, "compute stuff 1", 2048, nullptr, 10, nullptr);
+  // xTaskCreate(compute_stuff, "compute stuff 2", 2048, nullptr, 10, nullptr);
+  // xTaskCreate(compute_stuff, "compute stuff 2", 2048, nullptr, 10, nullptr);
 }

@@ -11,13 +11,7 @@
 #define WS2812_DRIVER_H
 
 #include <stdint.h>
-
-typedef union {
-  struct __attribute__((packed)) {
-    uint8_t g, r, b;
-  };
-  uint32_t num : 24;
-} rgb_t;
+#include "ws2812rmt.h"
 
 void ws2812_init(int gpioNum);
 void ws2812_set(unsigned int length, rgb_t *array);
