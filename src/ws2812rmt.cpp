@@ -5,14 +5,32 @@
 #include "freertos/task.h"
 #include "pins.h"
 
-#define RMT_TX_CHANNEL RMT_CHANNEL_0
+static constexpr const uint32_t ds = 4;                          // 125ns
+static constexpr const uint32_t dl = 20;                         // 1000ns
+static constexpr const uint32_t rs = dl * 50;                    // 50us
+static constexpr const rmt_item32_t reset = {{{rs, 0, rs, 0}}};  // reset
+static constexpr const rmt_item32_t bit0 = {{{ds, 1, dl, 0}}};   // 0
+static constexpr const rmt_item32_t bit1 = {{{dl, 1, ds, 0}}};   // 1
 
-void ws2812_rmt_init(const gpio_num_t gpio) {
+static inline void colour_to_rmt(const uint8_t colour,
+                                 std::vector<rmt_item32_t> &items) {
+  for (int i = 7; i >= 0; i--) {
+    if (colour & (1 << i)) {
+      items.emplace_back(bit1);
+    } else {
+      items.emplace_back(bit0);
+    }
+  }
+}
+
+ws2812_rmt::ws2812_rmt(const gpio_num_t gpio, const rmt_channel_t channel,
+                       const uint8_t mem_block_num) {
+  this->channel = channel;
   rmt_config_t config;
   config.rmt_mode = RMT_MODE_TX;
-  config.channel = RMT_TX_CHANNEL;
+  config.channel = channel;
   config.gpio_num = gpio;
-  config.mem_block_num = 1;
+  config.mem_block_num = mem_block_num;
   config.tx_config.loop_en = false;
   config.tx_config.carrier_en = false;
   config.tx_config.idle_output_en = true;
@@ -23,25 +41,7 @@ void ws2812_rmt_init(const gpio_num_t gpio) {
   ESP_ERROR_CHECK(rmt_driver_install(config.channel, 0, 0));
 }
 
-const uint32_t ds = 4;
-const uint32_t dl = 20;                         // 1us
-const uint32_t rs = dl * 50;                    // 50us
-const rmt_item32_t reset = {{{rs, 0, rs, 0}}};  // reset
-
-inline void colour_to_rmt(const uint8_t colour,
-                          std::vector<rmt_item32_t> &items) {
-  const rmt_item32_t bit0 = {{{ds, 1, dl, 0}}};  // 0
-  const rmt_item32_t bit1 = {{{dl, 1, ds, 0}}};  // 1
-  for (int i = 7; i >= 0; i--) {
-    if (colour & (1 << i)) {
-      items.emplace_back(bit1);
-    } else {
-      items.emplace_back(bit0);
-    }
-  }
-}
-
-void ws2812_rmt_set(const std::vector<rgb_t> items) {
+void ws2812_rmt::operator<<(const std::vector<rgb_t> &items) const {
   std::vector<rmt_item32_t> rmt_items;
   rmt_items.emplace_back(reset);
   for (const auto &item : items) {
@@ -49,6 +49,6 @@ void ws2812_rmt_set(const std::vector<rgb_t> items) {
     colour_to_rmt(item.r, rmt_items);
     colour_to_rmt(item.b, rmt_items);
   }
-  ESP_ERROR_CHECK(rmt_write_items(RMT_TX_CHANNEL, rmt_items.data(),
-                                  rmt_items.size(), true));
+  ESP_ERROR_CHECK(
+      rmt_write_items(this->channel, rmt_items.data(), rmt_items.size(), true));
 }

@@ -4,6 +4,7 @@
 #include <freertos/semphr.h>
 #include <freertos/task.h>
 #include <math.h>
+#include "esp_log.h"
 #include "pins.h"
 #include "sdkconfig.h"
 #include "ws2812rmt.h"
@@ -48,7 +49,7 @@ void compute_stuff(void*) {
     double x = 0;
     for (int i = 0; i < 500000; i++) x += sin(i);
     if (x != -120) {
-      printf("Took %d ticks\n", xTaskGetTickCount() - start);
+      ESP_LOGI("MAIN", "Took %d ticks\n", xTaskGetTickCount() - start);
       vTaskDelay(1);
       // xSemaphoreGive(semaphore_handle);
     }
@@ -92,15 +93,14 @@ void ws2812_naive_set(const std::vector<rgb_t> pixels) {
 
 void led_strip_task(void*) {
   esp_task_wdt_init(portMAX_DELAY, false);
-  bool naive = false;
-  if (naive) {
-    gpio_pad_select_gpio(LED_STRIP_GPIO);
-    gpio_set_direction(LED_STRIP_GPIO, GPIO_MODE_OUTPUT);
-  } else {
-    ws2812_rmt_init(LED_STRIP_GPIO);
-  }
-  const auto pixel_count = 8;
-  auto pixels = std::vector<rgb_t>(pixel_count);
+// #define XNAIVE
+#ifdef NAIVE
+  gpio_pad_select_gpio(LED_STRIP_GPIO);
+  gpio_set_direction(LED_STRIP_GPIO, GPIO_MODE_OUTPUT);
+#else
+  ws2812_rmt ws2812(LED_STRIP_GPIO);
+#endif
+  std::vector<rgb_t> pixels(8);
   auto color = makeRGBVal(200, 0, 0);
   uint8_t step = 0;
 
@@ -131,16 +131,15 @@ void led_strip_task(void*) {
         if (color.b == 0) step = 0;
         break;
     }
-    for (int i = 0; i < pixel_count; i++) pixels[i] = color;
+    for (int i = 0; i < pixels.size(); i++) pixels[i] = color;
 
-    if (naive) {
-      ws2812_naive_set(pixels);
-      vTaskDelay(pdMS_TO_TICKS(50));
-    } else {
-      // ws2812_set(pixel_count, pixels);
-      ws2812_rmt_set(pixels);
-      vTaskDelay(pdMS_TO_TICKS(50));
-    }
+#if NAIVE
+    ws2812_naive_set(pixels);
+#else
+    // ws2812_set(pixel_count, pixels);
+    ws2812 << pixels;
+#endif
+    vTaskDelay(pdMS_TO_TICKS(50));
   }
 }
 
@@ -159,7 +158,7 @@ extern "C" void app_main(void) {
   gpio_isr_handler_add(BUTTON_GPIO, button_isr_handler, nullptr);
 
   xTaskCreate(led_strip_task, "led strip", 8192, nullptr, 10, nullptr);
-  // xTaskCreate(compute_stuff, "compute stuff 1", 2048, nullptr, 10, nullptr);
-  // xTaskCreate(compute_stuff, "compute stuff 2", 2048, nullptr, 10, nullptr);
-  // xTaskCreate(compute_stuff, "compute stuff 2", 2048, nullptr, 10, nullptr);
+  xTaskCreate(compute_stuff, "compute stuff 1", 2048, nullptr, 10, nullptr);
+  xTaskCreate(compute_stuff, "compute stuff 2", 2048, nullptr, 10, nullptr);
+  xTaskCreate(compute_stuff, "compute stuff 3", 2048, nullptr, 10, nullptr);
 }
