@@ -93,7 +93,7 @@ void ws2812_naive_set(const std::vector<rgb_t> pixels) {
 
 void led_strip_task(void*) {
   esp_task_wdt_init(portMAX_DELAY, false);
-// #define XNAIVE
+#define NAIVE
 #ifdef NAIVE
   gpio_pad_select_gpio(LED_STRIP_GPIO);
   gpio_set_direction(LED_STRIP_GPIO, GPIO_MODE_OUTPUT);
@@ -133,7 +133,7 @@ void led_strip_task(void*) {
     }
     for (int i = 0; i < pixels.size(); i++) pixels[i] = color;
 
-#if NAIVE
+#ifdef NAIVE
     ws2812_naive_set(pixels);
 #else
     // ws2812_set(pixel_count, pixels);
