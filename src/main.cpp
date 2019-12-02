@@ -7,26 +7,7 @@
 #include "esp_log.h"
 #include "pins.h"
 #include "sdkconfig.h"
-#include "ws2812rmt.h"
-
-#define delay_a() \
-  { __asm__ __volatile__("nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;"); };
-
-#define delay_b() \
-  {               \
-    delay_a();    \
-    delay_a();    \
-    delay_a();    \
-    delay_a();    \
-    delay_a();    \
-    delay_a();    \
-    delay_a();    \
-    delay_a();    \
-    delay_a();    \
-    delay_a();    \
-    delay_a();    \
-    delay_a();    \
-  };
+#include "ws2812.h"
 
 static xSemaphoreHandle semaphore_handle = nullptr;
 
@@ -66,42 +47,18 @@ void IRAM_ATTR button_isr_handler(void* arg) {
   }
 }
 
-void ws2812_naive_set(const std::vector<rgb_t> pixels) {
-  gpio_set_level(LED_STRIP_GPIO, 0);
-  ets_delay_us(52);
-  for (const auto& pixel : pixels) {
-    bool x[24] = {0};
-    for (uint8_t j = 0; j < 8; j++) x[7 - j] = ((pixel.g >> j) & 1) == 0;
-    for (uint8_t j = 0; j < 8; j++) x[15 - j] = ((pixel.r >> j) & 1) == 0;
-    for (uint8_t j = 0; j < 8; j++) x[23 - j] = ((pixel.b >> j) & 1) == 0;
-    for (uint8_t j = 0; j < 24; j++) {
-      if (!x[j]) {
-        GPIO.out_w1ts = 1 << LED_STRIP_GPIO;
-        delay_b();
-        GPIO.out_w1tc = 1 << LED_STRIP_GPIO;
-        delay_a();
-      }
-      if (x[j]) {
-        GPIO.out_w1ts = 1 << LED_STRIP_GPIO;
-        delay_a();
-        GPIO.out_w1tc = 1 << LED_STRIP_GPIO;
-        delay_b();
-      }
-    }
-  }
-}
-
 void led_strip_task(void*) {
   esp_task_wdt_init(portMAX_DELAY, false);
-#define NAIVE
+//#define NAIVE
 #ifdef NAIVE
   gpio_pad_select_gpio(LED_STRIP_GPIO);
   gpio_set_direction(LED_STRIP_GPIO, GPIO_MODE_OUTPUT);
 #else
-  ws2812_rmt ws2812(LED_STRIP_GPIO);
+  //ws2812_rmt ws2812(LED_STRIP_GPIO);
+  ws2812_rmt_init(LED_STRIP_GPIO);
 #endif
-  std::vector<rgb_t> pixels(8);
-  auto color = makeRGBVal(200, 0, 0);
+  rgb_t pixels[8];
+  rgb_t color = makeRGBVal(200, 0, 0);
   uint8_t step = 0;
 
   while (1) {
@@ -131,13 +88,14 @@ void led_strip_task(void*) {
         if (color.b == 0) step = 0;
         break;
     }
-    for (int i = 0; i < pixels.size(); i++) pixels[i] = color;
+    for (int i = 0; i < 8; i++) pixels[i] = color;
 
 #ifdef NAIVE
     ws2812_naive_set(pixels);
 #else
     // ws2812_set(pixel_count, pixels);
-    ws2812 << pixels;
+    //ws2812 << pixels;
+    ws2812_rmt_set(pixels, 8);
 #endif
     vTaskDelay(pdMS_TO_TICKS(50));
   }
