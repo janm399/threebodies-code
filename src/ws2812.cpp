@@ -8,9 +8,9 @@
 static constexpr const uint32_t ds = 10;                         // 125ns
 static constexpr const uint32_t dl = 80;                         // 1000ns
 static constexpr const uint32_t rs = dl * 50;                    // 50us
-static constexpr const rmt_item32_t reset = {{{rs, 0, rs, 0}}};  // reset
-static constexpr const rmt_item32_t bit0 = {{{ds, 1, dl, 0}}};   // 0
-static constexpr const rmt_item32_t bit1 = {{{dl, 1, ds, 0}}};   // 1
+static constexpr const rmt_item32_t reset = {rs, 0, rs, 0};  // reset
+static constexpr const rmt_item32_t bit0 = {ds, 1, dl, 0};   // 0
+static constexpr const rmt_item32_t bit1 = {dl, 1, ds, 0};   // 1
 
 #define delay_a() \
   { __asm__ __volatile__("nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;nop;"); };
