@@ -1,8 +1,6 @@
 #include "ws2812.h"
 #include "driver/rmt.h"
 #include "esp_log.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 #include "pins.h"
 
 static constexpr const uint32_t ds = 10;                     // 125ns
@@ -82,7 +80,7 @@ void ws2812_rmt_init(const gpio_num_t gpio,
 
 static inline void colour_to_rmts(const uint8_t colour, rmt_item32_t *items) {
   for (int i = 7; i >= 0; i--, items++) {
-    if (colour & (1 << i)) *items = bit1; else *items = bit0;
+    if (colour & (1u << i)) *items = bit1; else *items = bit0;
   }
 }
 
