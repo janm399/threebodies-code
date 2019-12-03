@@ -57,7 +57,8 @@ void led_strip_task(void*) {
   //ws2812_rmt ws2812(LED_STRIP_GPIO);
   ws2812_rmt_init(LED_STRIP_GPIO);
 #endif
-  rgb_t pixels[8];
+  const auto pixel_count = 8;
+  rgb_t pixels[pixel_count];
   rgb_t color = makeRGBVal(200, 0, 0);
   uint8_t step = 0;
 
@@ -88,13 +89,13 @@ void led_strip_task(void*) {
         if (color.b == 0) step = 0;
         break;
     }
-    for (int i = 0; i < 8; i++) pixels[i] = color;
+    for (int i = 0; i < pixel_count; i++) pixels[i] = color;
 
 #ifdef NAIVE
-    ws2812_naive_set(pixels);
+    ws2812_naive_set(pixels, pixel_count);
 #else
     //ws2812 << pixels;
-    ws2812_rmt_set(pixels, 8);
+    ws2812_rmt_set(pixels, pixel_count);
 #endif
     vTaskDelay(pdMS_TO_TICKS(50));
   }
