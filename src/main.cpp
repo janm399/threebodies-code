@@ -93,7 +93,6 @@ void led_strip_task(void*) {
 #ifdef NAIVE
     ws2812_naive_set(pixels);
 #else
-    // ws2812_set(pixel_count, pixels);
     //ws2812 << pixels;
     ws2812_rmt_set(pixels, 8);
 #endif
