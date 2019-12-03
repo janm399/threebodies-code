@@ -3,7 +3,7 @@
 #include <freertos/queue.h>
 #include <freertos/semphr.h>
 #include <freertos/task.h>
-#include <math.h>
+#include <cmath>
 #include "esp_log.h"
 #include "pins.h"
 #include "sdkconfig.h"
@@ -11,7 +11,8 @@
 
 static xSemaphoreHandle semaphore_handle = nullptr;
 
-void led_task(void* arg) {
+[[noreturn]]
+void led_task(void*) {
   bool x = false;
   while (true) {
     xSemaphoreTake(semaphore_handle, portMAX_DELAY);
@@ -24,6 +25,7 @@ void led_task(void* arg) {
   }
 }
 
+[[noreturn]]
 void compute_stuff(void*) {
   while (true) {
     auto start = xTaskGetTickCount();
@@ -47,6 +49,7 @@ void IRAM_ATTR button_isr_handler(void* arg) {
   }
 }
 
+[[noreturn]]
 void led_strip_task(void*) {
   esp_task_wdt_init(portMAX_DELAY, false);
 //#define NAIVE
@@ -62,7 +65,7 @@ void led_strip_task(void*) {
   rgb_t color = makeRGBVal(200, 0, 0);
   uint8_t step = 0;
 
-  while (1) {
+  while (true) {
     switch (step) {
       case 0:
         color.r++;
@@ -89,7 +92,7 @@ void led_strip_task(void*) {
         if (color.b == 0) step = 0;
         break;
     }
-    for (int i = 0; i < pixel_count; i++) pixels[i] = color;
+    for (auto &pixel : pixels) pixel = color;
 
 #ifdef NAIVE
     ws2812_naive_set(pixels, pixel_count);

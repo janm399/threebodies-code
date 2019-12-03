@@ -2,4 +2,6 @@
 *.s#?
 .DS_Store
 .vscode
-
+.idea
+cmake-*
+CMake*

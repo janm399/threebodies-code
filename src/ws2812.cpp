@@ -5,9 +5,9 @@
 #include "freertos/task.h"
 #include "pins.h"
 
-static constexpr const uint32_t ds = 10;                         // 125ns
-static constexpr const uint32_t dl = 80;                         // 1000ns
-static constexpr const uint32_t rs = dl * 50;                    // 50us
+static constexpr const uint32_t ds = 10;                     // 125ns
+static constexpr const uint32_t dl = 80;                     // 1000ns
+static constexpr const uint32_t rs = dl * 50;                // 50us
 static constexpr const rmt_item32_t reset = {rs, 0, rs, 0};  // reset
 static constexpr const rmt_item32_t bit0 = {ds, 1, dl, 0};   // 0
 static constexpr const rmt_item32_t bit1 = {dl, 1, ds, 0};   // 1
@@ -41,21 +41,21 @@ void ws2812_naive_set(const rgb_t* pixels, const uint count) {
   ets_delay_us(52);
   for (uint i = 0; i < count; i++) {
     const auto pixel = pixels[i];
-    bool x[24] = {0};
+    bool x[24] = {false};
     for (uint8_t j = 0; j < 8; j++) x[7 - j] = ((pixel.g >> j) & 1) == 0;
     for (uint8_t j = 0; j < 8; j++) x[15 - j] = ((pixel.r >> j) & 1) == 0;
     for (uint8_t j = 0; j < 8; j++) x[23 - j] = ((pixel.b >> j) & 1) == 0;
-    for (uint8_t j = 0; j < 24; j++) {
-      if (!x[j]) {
-        GPIO.out_w1ts = 1 << LED_STRIP_GPIO;
+    for (bool j : x) {
+      if (!j) {
+        GPIO.out_w1ts = 1u << LED_STRIP_GPIO;
         delay_b();
-        GPIO.out_w1tc = 1 << LED_STRIP_GPIO;
+        GPIO.out_w1tc = 1u << LED_STRIP_GPIO;
         delay_a();
       }
-      if (x[j]) {
-        GPIO.out_w1ts = 1 << LED_STRIP_GPIO;
+      if (j) {
+        GPIO.out_w1ts = 1u << LED_STRIP_GPIO;
         delay_a();
-        GPIO.out_w1tc = 1 << LED_STRIP_GPIO;
+        GPIO.out_w1tc = 1u << LED_STRIP_GPIO;
         delay_b();
       }
     }
